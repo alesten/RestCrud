@@ -9,8 +9,207 @@ and open the template in the editor.
         <title>TODO supply a title</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     </head>
     <body>
-        <div>TODO write content</div>
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Add New Person</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label class="label label-default">First Name</label>
+                            <input class="form-control" type="text" name="fName" />
+                        </div>
+                        <div class="form-group">
+                            <label class="label label-default">Last Name</label>
+                            <input class="form-control" type="text" name="lName" />
+                        </div>
+                        <div class="form-group">
+                            <label class="label label-default">Phone</label>
+                            <input class="form-control" type="text" name="phone" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="clearAddPersonFields();">Close</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="addPersonToTable();">Add Person</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="myModalE" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="myModalLabel">Edit Person</h4>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="idE" />
+                        
+                        <div class="form-group">
+                            <label class="label label-default">First Name</label>
+                            <input class="form-control" type="text" name="fNameE" />
+                        </div>
+                        <div class="form-group">
+                            <label class="label label-default">Last Name</label>
+                            <input class="form-control" type="text" name="lNameE" />
+                        </div>
+                        <div class="form-group">
+                            <label class="label label-default">Phone</label>
+                            <input class="form-control" type="text" name="phoneE" />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal" onclick="clearEditPersonFields();">Close</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="editPerson();">Save Person</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Phone</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <button class="btn btn-default" onclick="putPersonsInTable();">Reload Data</button>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">Add New Person</button>
+        <script>
+
+            $(document).ready(function () {
+                putPersonsInTable();
+            });
+
+            function putPersonsInTable() {
+                $.ajax({
+                    url: "/api/person",
+                    type: 'GET',
+                    success: function (result) {
+                        str = "";
+
+                        for (var i = 0; i < result.length; i++) {
+                            var person = result[i];
+
+                            str += "<tr>";
+
+                            str += "<td>" + person["id"] + "</td>";
+                            str += "<td>" + person["fName"] + "</td>";
+                            str += "<td>" + person["lName"] + "</td>";
+                            str += "<td>" + person["phone"] + "</td>";
+                            str += "<td>" + "<a href='#' onclick='deletePerson(this);' data-personid='" + person["id"] + "'>delete</a> / <a href='#' onclick='editPersonDataToModel(this);' data-personid='" + person["id"] + "' data-toggle='modal' data-target='#myModalE'>edit</a> " + "</td>";
+
+                            str += "</tr>";
+                        }
+
+                        $("tbody").html(str);
+                    }
+                });
+            }
+
+            function addPersonToTable() {
+                var fName = $('input[name=fName]').val();
+                var lName = $('input[name=lName]').val();
+                var phone = $('input[name=phone]').val();
+
+                var data = {fName: fName, lName: lName, phone: phone};
+
+                $.ajax({
+                    url: "api/person",
+                    type: 'POST',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    success: function (result) {
+                        var str = "";
+
+                        str += "<tr>";
+
+                        str += "<td>" + result["id"] + "</td>";
+                        str += "<td>" + result["fName"] + "</td>";
+                        str += "<td>" + result["lName"] + "</td>";
+                        str += "<td>" + result["phone"] + "</td>";
+                        str += "<td>" + "<a href='#' onclick='deletePerson(this);' data-personid='" + result["id"] + "'>delete</a> / <a onclick='editPersonDataToModel(this);' data-personid='" + result["id"] + "' data-toggle='modal' data-target='#myModalE'>edit</a> " + "</td>";
+
+                        str += "</tr>";
+
+                        $('tbody').append(str);
+                        clearAddPersonFields();
+                    }
+                });
+
+            }
+
+            function clearAddPersonFields() {
+                $('input[name=fName]').val('');
+                $('input[name=lName]').val('');
+                $('input[name=phone]').val('');
+            }
+
+            function deletePerson(person) {
+                var id = $(person).data("personid");
+                $.ajax({
+                    url: "/api/person/" + id,
+                    type: 'DELETE',
+                    success: function (result) {
+                        putPersonsInTable();
+                    }
+                });
+            }
+            
+            function editPersonDataToModel(person){
+                var id = $(person).data("personid");
+                
+                $.ajax({
+                    url: "/api/person/" + id,
+                    type: 'GET',
+                    success: function (result) {
+                        $('input[name=idE]').val(result["id"]);
+                        $('input[name=fNameE]').val(result["fName"]);
+                        $('input[name=lNameE]').val(result["lName"]);
+                        $('input[name=phoneE]').val(result["phone"]);
+                    }
+                })
+            }
+            
+            function editPerson(){
+                var id = $('input[name=idE').val();
+                var fName = $('input[name=fNameE').val();
+                var lName = $('input[name=lNameE').val();
+                var phone = $('input[name=phoneE').val();
+                
+                var data = {fName:fName, lName:lName, phone:phone,id:id};
+                $.ajax({
+                    url: "/api/person",
+                    type: 'PUT',
+                    data: JSON.stringify(data),
+                    dataType: 'json',
+                    success: function (result) {
+                        putPersonsInTable();
+                        clearEditPersonFields();
+                    }
+                })
+            }
+            
+            function clearEditPersonFields(){
+                $('input[name=fNameE]').val('');
+                $('input[name=lNameE]').val('');
+                $('input[name=phoneE]').val('');
+            }
+        </script>
     </body>
 </html>
